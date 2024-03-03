@@ -1,5 +1,8 @@
-import math
 
+#The algorithm to solve the SFR/MTF is taken from the source code of Bhavin Nayak (2015)
+#https://github.com/bvnayak/PDS_Compute_MTF
+
+import math
 import cv2
 import numpy as np
 from scipy import interpolate
