@@ -1,4 +1,6 @@
 # -*- coding: utf-8 -*-
+# Jose Pereira 2023
+# http://imageqa.jpereira.net/
 
 import os
 import math
