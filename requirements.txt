@@ -7,3 +7,4 @@ scipy
 ExifRead
 PyQt5==5.9.2
 pyqt5-dev-tools
+pyqtgraph
