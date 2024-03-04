@@ -28,3 +28,8 @@ ImageQA's functionalities are inspired by standards:
 ![imageQA](https://github.com/jpereiranet/imageQA/blob/main/img/ImageQA_de_about.png)
 
 
+## How to run
+
+Install requirements and run home.py
+
+
