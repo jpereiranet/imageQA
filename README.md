@@ -15,6 +15,5 @@ Las funcionalidades de ImageQA está inspirado en las normas:
 
 - ISO-TR 19263-1 (2017)_Photography - Archiving systems - Part 1, Best practices for digital image capture of cultural heritage material
 - ISO-TS 19264-1 (2021)_Phtography - Archiving systems - Image quality analysis - Part 1, reflective originals
-- Así como en las recomendaciones de 
 
 
