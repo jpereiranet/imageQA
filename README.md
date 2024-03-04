@@ -25,3 +25,6 @@ ImageQA's functionalities are inspired by standards:
 - [Metamorphoze](https://www.metamorfoze.nl/english/digitization)
 
 
+![imageQA](https://github.com/jpereiranet/imageQA/blob/main/img/ImageQA_de_about.png)
+
+
