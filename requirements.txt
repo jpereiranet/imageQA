@@ -1,0 +1,8 @@
+Pillow==9.2.0
+PyQt5==5.15.10
+pyqtgraph==0.13.4
+numpy==1.26.4
+opencv-python==4.9.0.80
+colormath==3.0.0
+ExifRead==3.0.0
+scipy==1.11.4
