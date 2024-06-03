@@ -172,7 +172,7 @@ class FallOffUI(object):
     def export_graph(self, key, plot):
         fname = QtWidgets.QFileDialog.getExistingDirectory(None, 'Choose a directory for save Image')
         # print(fname)
-        if fname is not "":
+        if fname != "":
             timestr = time.strftime("%Y%m%d-%H%M%S")
             exporter = pyqtgraph.exporters.ImageExporter(plot.plotItem)
             exporter.parameters()['width'] = 800  # (note this also affects height parameter)
