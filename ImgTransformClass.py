@@ -1,7 +1,7 @@
 import io
 
 from PIL import Image, ImageCms, ImageQt
-
+from PyQt5 import QtGui
 
 
 class ImgTransformClass:
@@ -114,12 +114,32 @@ class ImgTransformClass:
         s = self.rgb2rgb(newimg)
 
         # toqpixmap solo esta presente en la version > 4.3.0 de PIL
-        qimage = ImageQt.toqpixmap(s)
+        # con version 10.3 no funciona, usar funcion alternativa
+        #qimage = ImageQt.toqpixmap(s)
 
-        # self.lab_image.save('lab.tiff', format='TIFF')
+        qimage = self.pil2pixmap(s)
 
         return qimage
         # self.in_image.close()  #esto peta en linux???
+
+    def pil2pixmap(self, im):
+        '''
+        from Michael https://stackoverflow.com/questions/34697559/pil-image-to-qpixmap-conversion-issue
+        '''
+        if im.mode == "RGB":
+            r, g, b = im.split()
+            im = Image.merge("RGB", (b, g, r))
+        elif im.mode == "RGBA":
+            r, g, b, a = im.split()
+            im = Image.merge("RGBA", (b, g, r, a))
+        elif im.mode == "L":
+            im = im.convert("RGBA")
+        # Bild in RGBA konvertieren, falls nicht bereits passiert
+        im2 = im.convert("RGBA")
+        data = im2.tobytes("raw", "RGBA")
+        qim = QtGui.QImage(data, im.size[0], im.size[1], QtGui.QImage.Format_ARGB32)
+        pixmap = QtGui.QPixmap.fromImage(qim)
+        return pixmap
 
     def rgb2rgb(self, in_image):
 
