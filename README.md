@@ -51,7 +51,6 @@ EN: ImageQA is available for installation as executable packages in the form of 
 
 ## Manuales de uso
 
-
 [PDF Castellano](https://github.com/jpereiranet/imageQA/blob/main/manuales/imageQA_manual_ES.pdf)
 
 [PDF English](https://github.com/jpereiranet/imageQA/blob/main/manuales/imageQA_handbook_EN.pdf)
