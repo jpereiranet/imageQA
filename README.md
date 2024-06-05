@@ -43,18 +43,18 @@ ES: ImageQA esta disponible para su instalación como paquetes ejecutables en su
 
 EN: ImageQA is available for installation as executable packages in the form of an .app for OSx and .exe for Win
 
-[Mac Osx < 10.14 Mojave](http://imageqa.jpereira.net/descargas/imageQA_installer_mojave.dmg)
+[Mac Osx < 10.14 Mojave](https://github.com/jpereiranet/imageQA/releases/download/v1.9.1/imageQA_installer_mojave.dmg)
 
-[Mac Osx > 10-15 Catalina](http://imageqa.jpereira.net/descargas/imageQA_installer_catalina.dmg)
+[Mac Osx > 10-15 Catalina](https://github.com/jpereiranet/imageQA/releases/download/v1.9.1/imageQA_installer_catalina.dmg)
 
-[Windows > 7](http://imageqa.jpereira.net/descargas/ImageQA_installer.exe)
+[Windows > 7](https://github.com/jpereiranet/imageQA/releases/download/v1.9.1/ImageQA_installer.exe)
 
 ## Manuales de uso
 
 
-[PDF Castellano](http://imageqa.jpereira.net/descargas/imageQA_manual_ES.pdf)
+[PDF Castellano](https://github.com/jpereiranet/imageQA/blob/main/manuales/imageQA_manual_ES.pdf)
 
-[PDF English](http://imageqa.jpereira.net/descargas/imageQA_handbook_EN.pdf)
+[PDF English](https://github.com/jpereiranet/imageQA/blob/main/manuales/imageQA_handbook_EN.pdf)
 
 ES: Más información y descargas en la web
 
