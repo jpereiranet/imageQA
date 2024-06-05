@@ -158,7 +158,7 @@ class spdUI(object):
         fname = QtWidgets.QFileDialog.getExistingDirectory(None, 'Choose a directory for save Image', path,
                                                            QtWidgets.QFileDialog.ShowDirsOnly)
 
-        if fname is not "":
+        if fname != "":
             timestr = time.strftime("%Y%m%d-%H%M%S")
             exporter = pyqtgraph.exporters.ImageExporter(plot.plotItem)
             #exporter.parameters()['width'] = 800  # (note this also affects height parameter)
@@ -175,7 +175,7 @@ class spdUI(object):
         fname = QtWidgets.QFileDialog.getExistingDirectory(None, 'Choose a directory for save list', path,
                                                            QtWidgets.QFileDialog.ShowDirsOnly)
 
-        if fname is not "":
+        if fname != "":
             saveReportToFileClass(value, fname, key)
             self.params.save_setting('rootfolderSAVE', str(fname))
 
