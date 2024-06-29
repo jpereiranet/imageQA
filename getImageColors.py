@@ -162,7 +162,7 @@ class getImageColors:
         self.icc_translate()
 
         size = self.sampling_size, self.sampling_size
-        self.lab_image.thumbnail(size, Image.ANTIALIAS)
+        self.lab_image.thumbnail(size, Image.LANCZOS)
         #self.lab_image.save("newlab.tiff")
 
         pixels = self.lab_image.load()
