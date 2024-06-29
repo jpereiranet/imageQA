@@ -8,6 +8,8 @@ import pyqtgraph as pg
 import pyqtgraph.exporters
 from PIL import Image
 from PyQt5 import QtCore, QtGui
+from PyQt5.QtWidgets import QApplication,QDialog, QWidget,QHBoxLayout, QVBoxLayout, QLabel,QToolButton,QTabWidget,QToolButton, QFileDialog
+from PyQt5.QtGui import QColor, QIcon
 
 from app_paths import DefinePathsClass
 from plist_set import ProcessSettingsClass
@@ -21,14 +23,14 @@ except AttributeError:
         return s
 
 try:
-    _encoding = QtGui.QApplication.UnicodeUTF8
+    _encoding = QApplication.UnicodeUTF8
 
 
     def _translate(context, text, disambig):
-        return QtGui.QApplication.translate(context, text, disambig, _encoding)
+        return QApplication.translate(context, text, disambig, _encoding)
 except AttributeError:
     def _translate(context, text, disambig):
-        return QtGui.QApplication.translate(context, text, disambig)
+        return QApplication.translate(context, text, disambig)
 
 
 class caberrationUI(object):
@@ -44,21 +46,21 @@ class caberrationUI(object):
         DeltaDialog.setFixedSize(789, 491)
         DeltaDialog.setWindowTitle(_translate("ImageQA", "ImageQA Delta-e", None))
 
-        self.horizontalLayoutWidget = QtGui.QWidget(DeltaDialog)
+        self.horizontalLayoutWidget = QWidget(DeltaDialog)
         self.horizontalLayoutWidget.setGeometry(QtCore.QRect(10, 440, 291, 32))
         self.horizontalLayoutWidget.setObjectName(_fromUtf8("horizontalLayoutWidget"))
-        self.horizontalLayout = QtGui.QHBoxLayout(self.horizontalLayoutWidget)
+        self.horizontalLayout = QHBoxLayout(self.horizontalLayoutWidget)
         # self.horizontalLayout.setMargin(0)
         self.horizontalLayout.setObjectName(_fromUtf8("horizontalLayout"))
 
-        self.btCerrar = QtGui.QToolButton(self.horizontalLayoutWidget)
+        self.btCerrar = QToolButton(self.horizontalLayoutWidget)
         self.btCerrar.setGeometry(QtCore.QRect(0, 0, 30, 30))
         self.btCerrar.setObjectName(_fromUtf8("btCerrar"))
-        self.btCerrar.setIcon(QtGui.QIcon(DefinePathsClass.create_resource_path('close_64px.png')))
+        self.btCerrar.setIcon(QIcon(DefinePathsClass.create_resource_path('close_64px.png')))
         self.btCerrar.setIconSize(QtCore.QSize(30, 30))
         self.btCerrar.setToolTip("Close")
 
-        self.tabWidget = QtGui.QTabWidget(DeltaDialog)
+        self.tabWidget = QTabWidget(DeltaDialog)
         self.tabWidget.setGeometry(QtCore.QRect(10, 40, 761, 391))
         self.tabWidget.setObjectName(_fromUtf8("tabWidget"))
 
@@ -81,41 +83,41 @@ class caberrationUI(object):
             nameTab = key
             objName = "LensDialog_" + key
 
-            self.my_dict[x] = QtGui.QWidget()
+            self.my_dict[x] = QWidget()
             self.my_dict[x].setObjectName(_fromUtf8("tab_2"))
-            self.my_dict[y] = QtGui.QWidget(self.my_dict[x])
+            self.my_dict[y] = QWidget(self.my_dict[x])
             self.my_dict[y].setGeometry(QtCore.QRect(0, 300, 731, 60))
             self.my_dict[y].setObjectName(_fromUtf8("horizontalLayoutWidget_3"))
-            self.my_dict[z] = QtGui.QHBoxLayout(self.my_dict[y])
+            self.my_dict[z] = QHBoxLayout(self.my_dict[y])
             # self.my_dict[z].setMargin(0)
             self.my_dict[z].setObjectName(_fromUtf8("horizontalLayout_3"))
-            self.my_dict[a] = QtGui.QLabel(self.my_dict[y])
+            self.my_dict[a] = QLabel(self.my_dict[y])
             self.my_dict[a].setObjectName(_fromUtf8("label_5"))
             self.my_dict[a].setWordWrap(True);
             self.my_dict[z].addWidget(self.my_dict[a])
-            self.my_dict[v] = QtGui.QWidget(self.my_dict[x])
+            self.my_dict[v] = QWidget(self.my_dict[x])
             self.my_dict[v].setGeometry(QtCore.QRect(0, 0, 741, 291))
             self.my_dict[v].setObjectName(_fromUtf8("verticalLayoutWidget_2"))
-            self.my_dict[l] = QtGui.QVBoxLayout(self.my_dict[v])
+            self.my_dict[l] = QVBoxLayout(self.my_dict[v])
             # self.my_dict[l].setMargin(0)
             self.my_dict[l].setObjectName(_fromUtf8("verticalLayout_2"))
 
-            self.my_dict[bt1] = QtGui.QToolButton(self.my_dict[x])
+            self.my_dict[bt1] = QToolButton(self.my_dict[x])
             self.my_dict[bt1].setGeometry(QtCore.QRect(710, 310, 41, 41))
             self.my_dict[bt1].setObjectName(_fromUtf8("toolButton"))
-            self.my_dict[bt1].setIcon(QtGui.QIcon(DefinePathsClass.create_resource_path('report_64px.png')))
+            self.my_dict[bt1].setIcon(QIcon(DefinePathsClass.create_resource_path('report_64px.png')))
             self.my_dict[bt1].setIconSize(QtCore.QSize(40, 40))
 
-            self.my_dict[bt2] = QtGui.QToolButton(self.my_dict[x])
+            self.my_dict[bt2] = QToolButton(self.my_dict[x])
             self.my_dict[bt2].setGeometry(QtCore.QRect(660, 310, 41, 41))
             self.my_dict[bt2].setObjectName(_fromUtf8("toolButton_2"))
-            self.my_dict[bt2].setIcon(QtGui.QIcon(DefinePathsClass.create_resource_path('pictures_64px.png')))
+            self.my_dict[bt2].setIcon(QIcon(DefinePathsClass.create_resource_path('pictures_64px.png')))
             self.my_dict[bt2].setIconSize(QtCore.QSize(40, 40))
 
-            self.my_dict[bt3] = QtGui.QToolButton(self.my_dict[x])
+            self.my_dict[bt3] = QToolButton(self.my_dict[x])
             self.my_dict[bt3].setGeometry(QtCore.QRect(610, 310, 41, 41))
             self.my_dict[bt3].setObjectName(_fromUtf8("toolButton_3"))
-            self.my_dict[bt3].setIcon(QtGui.QIcon(DefinePathsClass.create_resource_path('table_64px.png')))
+            self.my_dict[bt3].setIcon(QIcon(DefinePathsClass.create_resource_path('table_64px.png')))
             self.my_dict[bt3].setIconSize(QtCore.QSize(30, 30))
 
             self.my_dict[bt1].setEnabled(False)
@@ -164,7 +166,7 @@ class caberrationUI(object):
 
     def open_data_table_ui(self, value, key):
 
-        dialog = QtGui.QDialog()
+        dialog = QDialog()
         dialog.ui = TableStatsUI(value, key, None)
         dialog.ui.setupUi(dialog)
         dialog.setAttribute(QtCore.Qt.WA_DeleteOnClose)
@@ -177,8 +179,8 @@ class caberrationUI(object):
             path = self.params.setting_restore("rootfolderSAVE")
             #print(path)
 
-        fname = QtGui.QFileDialog.getExistingDirectory(None, 'Choose a directory for save list', path,
-                                                       QtGui.QFileDialog.ShowDirsOnly)
+        fname = QFileDialog.getExistingDirectory(None, 'Choose a directory for save list', path,
+                                                       QFileDialog.ShowDirsOnly)
         if fname != "":
             saveReportToFileClass(value, fname, key)
             self.params.save_setting('rootfolderSAVE', str(fname))
@@ -193,8 +195,8 @@ class caberrationUI(object):
             path = self.params.setting_restore("rootfolderSAVE")
 
 
-        fname = QtGui.QFileDialog.getExistingDirectory(None, 'Choose a directory for save Image', path,
-                                                       QtGui.QFileDialog.ShowDirsOnly)
+        fname = QFileDialog.getExistingDirectory(None, 'Choose a directory for save Image', path,
+                                                       QFileDialog.ShowDirsOnly)
 
         if fname != "":
 
