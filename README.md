@@ -62,6 +62,7 @@ EN: More information and downloads on the web
 [http://imageqa.jpereira.net/](http://imageqa.jpereira.net/EN/download.php)
 
 ES: Video-tutorial en YouTube
+
 EN: Video-tutorial on YouYube, english subtitles available
 
 [YouTube](https://youtu.be/gcl9HSND-rU?si=9VyyoSDM_bAccMW2)
