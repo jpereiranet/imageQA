@@ -63,7 +63,7 @@ EN: More information and downloads on the web
 
 ES: Video-tutorial en YouTube
 
-EN: Video-tutorial on YouYube, english subtitles available
+EN: Video-tutorial on YouTube, english subtitles available
 
 [YouTube](https://youtu.be/gcl9HSND-rU?si=9VyyoSDM_bAccMW2)
 
