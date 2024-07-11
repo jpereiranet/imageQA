@@ -652,12 +652,15 @@ class MainDialogUI(object):
         for p in arr_icc:
             icc_path = os.path.join(self.iccFolder, p)
             if Path(icc_path).stat().st_size > 0:
-                ICC = ImageCms.ImageCmsProfile( icc_path )
-
-                # hay que usar la versión 3.2.0 de PIL
-                if hasattr(ICC.profile, 'device_class'):
-                    if ICC.profile.device_class == "scnr":
-                        arr_scnr.append(p)
+                try:
+                    #puede haber perfiles corruptos!
+                    ICC = ImageCms.ImageCmsProfile( icc_path )
+                    # hay que usar la versión 3.2.0 de PIL
+                    if hasattr(ICC.profile, 'device_class'):
+                        if ICC.profile.device_class == "scnr":
+                            arr_scnr.append(p)
+                except OSError as error:
+                    AppWarningsClass.critical_warn(str(error) + str(icc_path))
 
         self.comboBox_2.addItems(arr_scnr)
 
