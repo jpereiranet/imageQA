@@ -15,6 +15,7 @@ from warning_class import AppWarningsClass
 from pathlib import Path
 from log import log_Dialog
 import traceback
+import time
 
 
 
@@ -451,6 +452,7 @@ class MainDialogUI(object):
         objects = list(self.graphicsView.scene().items())
         #print(objects)
         for i in range(objects.__len__()):
+
             cadena = str(objects[i])
             r = cadena.split(".")
             #print("0:",r[0])
@@ -462,8 +464,11 @@ class MainDialogUI(object):
             if r[0] == "<pyqtgraph":
                 #print('borra')
                 try:
+                    objects[i].prepareGeometryChange() #parece que soluciona los cuelgues
                     self.graphicsView.removeItem(objects[i])
-                    self.graphicsView.update()  # con esto parece que no se cuelga
+                    #self.graphicsView.update()  # no soluciona los cuelgues en mojave
+                    #QApplication.processEvents() # tampoco soluciona los cuelgues
+                    #time.sleep(1) # tampoco soluciona los cuelgues
                 except:
                     dialog = QtWidgets.QDialog()
                     dialog.ui = log_Dialog(traceback.format_exc())
