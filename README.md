@@ -67,3 +67,12 @@ EN: Video-tutorial on YouTube, english subtitles available
 
 [YouTube](https://youtu.be/gcl9HSND-rU?si=9VyyoSDM_bAccMW2)
 
+## Donation / Sponsors
+
+ES: Si te gusta este proyecto, considera un donativo!
+
+EN:  If you like this project, consider a donation!
+
+[![](https://img.shields.io/static/v1?label=Sponsor&message=%E2%9D%A4&logo=GitHub&color=%23fe8e86)](https://github.com/sponsors/jpereiranet)
+
+
