@@ -75,4 +75,6 @@ EN:  If you like this project, consider a donation!
 
 [![](https://img.shields.io/static/v1?label=Sponsor&message=%E2%9D%A4&logo=GitHub&color=%23fe8e86)](https://github.com/sponsors/jpereiranet)
 
+[![paypal](https://www.paypalobjects.com/en_US/ES/i/btn/btn_donateCC_LG.gif)](https://www.paypal.com/cgi-bin/webscr?cmd=_donations&amp;business=TRBTAUMCTFNDA&amp;currency_code=EUR)
+
 
