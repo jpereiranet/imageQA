@@ -98,41 +98,48 @@ class GetMetadataClass:
             #considrar usar "Focal Plane X Resolution"?
             data = self.img.info['XML:com.adobe.xmp']
             var = XmpParser(data).read_meta
-            var = var["http://ns.adobe.com/exif/1.0/"]
+            if "http://ns.adobe.com/exif/1.0/" in var:
+                var = var["http://ns.adobe.com/exif/1.0/"]
 
-            if "ExifImageWidth" in var and "ExifImageLength" in var:
-                imgWidth = str(var["EXIF ExifImageWidth"])
-                imgHeigh = str(var["EXIF ExifImageLength"])
-                imgWidth,imgHeigh = self.forcelanscape(imgWidth, imgHeigh)
-
-            else:
-                width, height = self.img.size
-                imgWidth,imgHeigh = self.forcelanscape(width, height)
-
-            if "FocalLengthIn35mmFilm" in var and "FocalLength" in var:
-                focal35 = self.normalize_aperture(str(var["FocalLengthIn35mmFilm"]))
-                focal = self.normalize_aperture(str(var["FocalLength"]))
-
-                factorCrop = round(float(focal35) / float(focal), 2)
-
-                widthSensor = 36 / factorCrop
-                heightSensor = 24 / factorCrop
-
-                widthSensor, heightSensor = self.forcelanscape(widthSensor, heightSensor)
-
-                if imgWidth != 0:
-                    pitch = round((float(widthSensor) / float(imgWidth)) * 1000, 2)
+                if "ExifImageWidth" in var and "ExifImageLength" in var:
+                    imgWidth = str(var["EXIF ExifImageWidth"])
+                    imgHeigh = str(var["EXIF ExifImageLength"])
+                    imgWidth,imgHeigh = self.forcelanscape(imgWidth, imgHeigh)
 
                 else:
-                    pitch = 0
-                    imgWidth = 0
-                    heightSensor = 0
+                    width, height = self.img.size
+                    imgWidth,imgHeigh = self.forcelanscape(width, height)
 
+                if "FocalLengthIn35mmFilm" in var and "FocalLength" in var:
+                    focal35 = self.normalize_aperture(str(var["FocalLengthIn35mmFilm"]))
+                    focal = self.normalize_aperture(str(var["FocalLength"]))
+
+                    factorCrop = round(float(focal35) / float(focal), 2)
+
+                    widthSensor = 36 / factorCrop
+                    heightSensor = 24 / factorCrop
+
+                    widthSensor, heightSensor = self.forcelanscape(widthSensor, heightSensor)
+
+                    if imgWidth != 0:
+                        pitch = round((float(widthSensor) / float(imgWidth)) * 1000, 2)
+
+                    else:
+                        pitch = 0
+                        imgWidth = 0
+                        heightSensor = 0
+
+                else:
+                    factorCrop = 0
+                    widthSensor = 0
+                    heightSensor = 0
+                    pitch = 0
             else:
                 factorCrop = 0
                 widthSensor = 0
                 heightSensor = 0
                 pitch = 0
+
 
         elif self.img.format == "JPEG" or self.img.format == "TIFF":
             self.im = open(self.filename, 'rb')

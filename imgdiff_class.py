@@ -77,9 +77,12 @@ class ImgDiffClass():
             p1[i, :] = kp1[matches[i].queryIdx].pt
             p2[i, :] = kp2[matches[i].trainIdx].pt
 
-        homography, mask = cv2.findHomography(p1, p2, cv2.RANSAC)
+        if len(p1) > 4 and len(p2) > 4:
+            homography, mask = cv2.findHomography(p1, p2, cv2.RANSAC)
 
-        transformed_img = cv2.warpPerspective(img1_color, homography, (width, height))
+            transformed_img = cv2.warpPerspective(img1_color, homography, (width, height))
+        else:
+            transformed_img = img1_color
 
         return transformed_img, img2_color
 
