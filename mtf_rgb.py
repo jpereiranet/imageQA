@@ -8,7 +8,7 @@ from ImgTransformClass import ImgTransformClass
 from PIL import Image
 from plist_set import ProcessSettingsClass
 
-#from scipy.integrate import simps
+from scipy.integrate import simps
 
 class GetMTFClassRGB:
 
