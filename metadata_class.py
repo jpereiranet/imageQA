@@ -82,6 +82,17 @@ class GetMetadataClass:
 
         return arr[0],arr[1]
 
+    def computeFocal(self, cadena):
+        print(cadena)
+        if cadena.find("/") > 0:
+            arr = cadena.split("/")
+            focal = float(arr[0]) / float(arr[1])
+            print("FOCAL ", focal)
+            return focal
+        else:
+            print("CADENA: ", cadena)
+            return cadena
+
 
 
     def get_sensor_information(self):
@@ -93,7 +104,10 @@ class GetMetadataClass:
         pitch = 0
 
         if (self.img.format == "PNG") and ('XML:com.adobe.xmp' in self.img.info):
-
+            factorCrop = 0
+            widthSensor = 0
+            heightSensor = 0
+            pitch = 0
 
             #considrar usar "Focal Plane X Resolution"?
             data = self.img.info['XML:com.adobe.xmp']
@@ -124,21 +138,6 @@ class GetMetadataClass:
                     if imgWidth != 0:
                         pitch = round((float(widthSensor) / float(imgWidth)) * 1000, 2)
 
-                    else:
-                        pitch = 0
-                        imgWidth = 0
-                        heightSensor = 0
-
-                else:
-                    factorCrop = 0
-                    widthSensor = 0
-                    heightSensor = 0
-                    pitch = 0
-            else:
-                factorCrop = 0
-                widthSensor = 0
-                heightSensor = 0
-                pitch = 0
 
 
         elif self.img.format == "JPEG" or self.img.format == "TIFF":
@@ -154,30 +153,22 @@ class GetMetadataClass:
                 width, height = self.img.size
                 imgWidth, imgHeigh = self.forcelanscape(width, height)
 
-
             if "EXIF FocalLengthIn35mmFilm" in metadata and "EXIF FocalLength" in metadata:
                 focal35 = str(metadata["EXIF FocalLengthIn35mmFilm"])
                 focal = str(metadata["EXIF FocalLength"])
 
-                factorCrop = round(float(focal35) / float(focal), 2)
+                if focal35 != "0":
+                    factorCrop = round(float(focal35) / float(focal), 2)
 
-                widthSensor = 36 / factorCrop
-                heightSensor = 24 / factorCrop
+                    widthSensor = 36 / factorCrop
+                    heightSensor = 24 / factorCrop
 
-                widthSensor, heightSensor = self.forcelanscape(widthSensor, heightSensor)
+                    widthSensor, heightSensor = self.forcelanscape(widthSensor, heightSensor)
 
-                if imgWidth != 0:
-                    pitch = round((float(widthSensor) / float(imgWidth)) * 1000, 2)
-                else:
-                    pitch = 0
-                    imgWidth = 0
-                    heightSensor = 0
 
-            else:
-                factorCrop = 0
-                widthSensor = 0
-                heightSensor = 0
-                pitch = 0
+                    if imgWidth != 0:
+                        pitch = round((float(widthSensor) / float(imgWidth)) * 1000, 2)
+
 
         o = {"imgWidth": imgWidth, "imgHeight": imgHeigh, "factorCrop": factorCrop, "widthSensor": int(widthSensor),
              "heightSensor": int(heightSensor), "pitch": pitch}

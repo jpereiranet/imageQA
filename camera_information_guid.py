@@ -4,6 +4,7 @@ from PyQt5 import QtCore, QtWidgets
 
 from camera_information_class import CameraInformationClass
 from plist_set import ProcessSettingsClass
+from warning_class import AppWarningsClass
 
 import string
 
@@ -150,7 +151,6 @@ class CameraInfoUI(object):
         #return ''.join(filter(str.isdigit, value))
         return value
 
-
         #all = string.maketrans('', '')
         #nodigs = all.translate(all, string.digits)
         #return value.translate(all, nodigs)
@@ -162,10 +162,12 @@ class CameraInfoUI(object):
         #diagonal = math.sqrt( (img_width*img_width) + (img_height*img_height) )
 
         rule_pixel = self.clean_chars(self.input_rule_pixel.text())
+
         rule_real = float(self.clean_chars(self.input_rule_real.text())) / 25.4
 
-        ppi = int( float(rule_pixel) / float(rule_real) )
-        self.input_ppi_resolution.setText( str(ppi) )
+        if rule_real > 0:
+            ppi = int( float(rule_pixel) / float(rule_real) )
+            self.input_ppi_resolution.setText( str(ppi) )
 
 
 

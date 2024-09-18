@@ -401,7 +401,7 @@ class GetMTFClassRGB:
             imgLPmm = None
             lpPercent = None
 
-        if pitch and imgLPmm:
+        if pitch and float(pitch) > 0 and imgLPmm:
 
             LPmm = round((MTF / float(pitch)) * 1000, 2)
             LPmax = round ( 1000 / (2 * float(pitch) ), 2  )
@@ -414,6 +414,7 @@ class GetMTFClassRGB:
             #print("imgHeight", imgHeight)
             #LPmmPercent = round( (LPmm * 100) / LPmax ,1 )
         else:
+            #AppWarningsClass.critical_warn("Error, perhaps camera data is missing or incomplete")
             LPmm = None
             LPmax = None
             LW_PH = None
