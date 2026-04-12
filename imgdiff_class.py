@@ -27,8 +27,10 @@ class ImgDiffClass():
 
         self.im2Sample, self.im2Reference = self.OrbsRegister(image_a, image_b)
 
-        self.imgSampleSize = [image_a.shape[0],image_a.shape[1],round(os.path.getsize(multipleFiles[1])/1024,1), ntpath.basename(multipleFiles[1]) ]
-        self.imgReferenceSize = [image_b.shape[0],image_b.shape[1],round(os.path.getsize(multipleFiles[0])/1024,1), ntpath.basename(multipleFiles[0]) ]
+        self.imgSampleSize = [image_a.shape[0], image_a.shape[1], round(os.path.getsize(multipleFiles[0]) / 1024, 1),
+                              ntpath.basename(multipleFiles[0])]
+        self.imgReferenceSize = [image_b.shape[0], image_b.shape[1], round(os.path.getsize(multipleFiles[1]) / 1024, 1),
+                                 ntpath.basename(multipleFiles[1])]
 
 
 

@@ -61,7 +61,7 @@ class TableStatsUI(object):
 
         elif key == "C_NOISE":
 
-            report = saveReportToFileClass(None, value, None, None)
+            report = saveReportToFileClass(value, None, None)
             self.data = report.save_croma_noise()
 
         elif key == "NPS_RGB_X" or key == "NPS_RGB_Y":

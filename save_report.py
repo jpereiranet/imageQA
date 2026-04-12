@@ -395,7 +395,7 @@ class saveReportToFileClass:
 
         for key in self.values:
             p = []
-            if key is not "INFO":
+            if key != "INFO":
                 p.append(str(key))
 
                 if index == "MTF":

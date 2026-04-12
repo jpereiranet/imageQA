@@ -46,6 +46,11 @@ class MainDialogUI(object):
         self.y_orig = 0
 
         self.chartIndex = 0
+        self.overlay_items = []
+        self.getImage = None
+        self.plotRoi = None
+        self.ruleRoi = None
+        self.simb = None
 
         try:
             self.chars = ChartPatternsClass()
@@ -348,7 +353,8 @@ class MainDialogUI(object):
         self.verticalLayout.setObjectName("verticalLayout")
 
         ##--- GraphicsView (visor de imagenes )
-        self.graphicsView = pg.GraphicsView(useOpenGL=True, background=pg.mkColor('#ccc'))
+        # OpenGL in this viewer becomes unstable after repeated ROI/grid rebuilds.
+        self.graphicsView = pg.GraphicsView(useOpenGL=False, background=pg.mkColor('#ccc'))
         self.graphicsView.setObjectName("graphicsView")
         self.verticalLayout.addWidget(self.graphicsView)
 
@@ -434,7 +440,10 @@ class MainDialogUI(object):
     def reset_layout(self):
 
         self.label_coordinates.setText("")
+        previous_state = self.comboBox.blockSignals(True)
         self.comboBox.setCurrentIndex(0)
+        self.comboBox.blockSignals(previous_state)
+        self.chartIndex = 0
         self.DeltasDialog.setEnabled(False)
         self.openCGATS.setEnabled(False)
         self.openNeutrality.setEnabled(False)
@@ -447,37 +456,51 @@ class MainDialogUI(object):
 
         #self.openDIFFstats.setEnabled(False)
 
+    def _track_overlay_item(self, item):
+
+        if item is not None:
+            self.overlay_items.append(item)
+
+    def _disconnect_overlay_signals(self):
+
+        if self.plotRoi is not None:
+            try:
+                self.plotRoi.sigRegionChanged.disconnect(self.get_lastState)
+            except TypeError:
+                pass
+
+        if self.ruleRoi is not None:
+            try:
+                self.ruleRoi.sigRegionChanged.disconnect(self.rule_state)
+            except TypeError:
+                pass
+
     def remove_item_from_layout(self):
 
-        objects = list(self.graphicsView.scene().items())
-        #print(objects)
-        for i in range(objects.__len__()):
+        self._disconnect_overlay_signals()
 
-            cadena = str(objects[i])
-            r = cadena.split(".")
-            #print("0:",r[0])
-            #print("1:",r[1])
-            #print("2:",r[2])
-
-
-            #if r[2] == 'GraphItem' or r[2] == 'ROI':
-            if r[0] == "<pyqtgraph":
-                #print('borra')
+        for item in reversed(self.overlay_items):
+            try:
+                self.graphicsView.removeItem(item)
+            except Exception:
                 try:
-                    objects[i].prepareGeometryChange() #parece que soluciona los cuelgues
-                    self.graphicsView.removeItem(objects[i])
-                    #self.graphicsView.update()  # no soluciona los cuelgues en mojave
-                    #QApplication.processEvents() # tampoco soluciona los cuelgues
-                    #time.sleep(1) # tampoco soluciona los cuelgues
-                except:
+                    scene = self.graphicsView.scene()
+                    if scene is not None:
+                        scene.removeItem(item)
+                except Exception:
                     dialog = QtWidgets.QDialog()
                     dialog.ui = log_Dialog(traceback.format_exc())
                     dialog.ui.setupUi(dialog)
                     dialog.setAttribute(QtCore.Qt.WA_DeleteOnClose)
                     dialog.exec_()
 
-        #objects = list(self.graphicsView.scene().items())
-        #print("TRAS ORRAR:",objects)
+            if hasattr(item, "deleteLater"):
+                item.deleteLater()
+
+        self.overlay_items = []
+        self.plotRoi = None
+        self.ruleRoi = None
+        self.simb = None
 
     def get_prev_image(self):
 
@@ -508,6 +531,8 @@ class MainDialogUI(object):
 
             # self.layoutGeometry(im)
             self.verticalLayoutWidget.setGeometry(QtCore.QRect(10, 140, imgSizing[4], imgSizing[5]))
+            self.x_orig = imgSizing[4]
+            self.y_orig = imgSizing[5]
 
             self.camerainfo.rese_camera_information()
 
@@ -593,15 +618,15 @@ class MainDialogUI(object):
                 img_sizing = im.get_ratio_transform()
                 self.ratio = img_sizing[7]
 
+                self.remove_item_from_layout()
+                self.reset_layout()
                 self.getImage.setPixmap(self.myImage2)
                 self.getImage.update()
 
-                if (img_sizing[2] != self.x_orig) and (img_sizing[3] != self.y_orig):
+                if (img_sizing[4] != self.x_orig) or (img_sizing[5] != self.y_orig):
                     # solo se resetea si varia el tamaño de la imagen porque al cambiar el layout falla removeItemView
                     self.x_orig = img_sizing[4]
                     self.y_orig = img_sizing[5]
-                    self.remove_item_from_layout()
-                    self.reset_layout()
                     self.verticalLayoutWidget.setGeometry(QtCore.QRect(10, 140, img_sizing[4], img_sizing[5]))
                     # self.layoutGeometry(im)
 
@@ -675,6 +700,7 @@ class MainDialogUI(object):
 
         self.ruleRoi = pg.LineROI([20,20], [200, 20], width=1, pen=pg.mkPen(width=4.5, color='b'))
         self.graphicsView.addItem(self.ruleRoi)
+        self._track_overlay_item(self.ruleRoi)
 
         self.ruleRoi.removeHandle( self.ruleRoi.handles[2]['item'])
 
@@ -686,6 +712,7 @@ class MainDialogUI(object):
         self.plotRoi = pg.ROI([self.X_ROI, self.Y_ROI], [WIDTH_ROI, HIGHT_ROI], pen=pg.mkPen(width=4.5, color='r'))
 
         self.graphicsView.addItem(self.plotRoi)
+        self._track_overlay_item(self.plotRoi)
 
         lock = self.chars.is_lock(self.chartIndex)
 
@@ -767,6 +794,7 @@ class MainDialogUI(object):
         self.simb.setData(pos=chartVars[0], size=chartVars[2], symbol=chartVars[1], pxMode=False)
         self.simb.setOpacity(0.5)
         self.graphicsView.addItem(self.simb)
+        self._track_overlay_item(self.simb)
 
     def footer_advice(self, msg, type):
 

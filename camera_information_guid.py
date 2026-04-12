@@ -155,18 +155,33 @@ class CameraInfoUI(object):
         #nodigs = all.translate(all, string.digits)
         #return value.translate(all, nodigs)
 
+    def parse_float(self, value, default=0):
+
+        cleaned = str(self.clean_chars(value)).strip()
+        if cleaned == "":
+            return float(default)
+
+        if self.camerainfo.check_if_number(cleaned):
+            return float(cleaned)
+
+        return None
+
     def get_resolution(self):
         #img_width = self.input_pixel_width.text()
         #img_height = self.input_pixel_height.text()
 
         #diagonal = math.sqrt( (img_width*img_width) + (img_height*img_height) )
 
-        rule_pixel = self.clean_chars(self.input_rule_pixel.text())
+        rule_pixel = self.parse_float(self.input_rule_pixel.text())
+        rule_real_mm = self.parse_float(self.input_rule_real.text())
 
-        rule_real = float(self.clean_chars(self.input_rule_real.text())) / 25.4
+        if rule_pixel is None or rule_real_mm is None:
+            return
 
-        if rule_real > 0:
-            ppi = int( float(rule_pixel) / float(rule_real) )
+        rule_real = rule_real_mm / 25.4
+
+        if rule_real > 0 and rule_pixel > 0:
+            ppi = int(rule_pixel / rule_real)
             self.input_ppi_resolution.setText( str(ppi) )
 
 
@@ -194,17 +209,27 @@ class CameraInfoUI(object):
 
     def save_new_camera_values(self, x):
 
-        o = {"widthSensor": self.clean_chars(int(float(self.non_empty(self.input_width.text())))),
-             "heightSensor": self.clean_chars(int(float(self.non_empty(self.input_height.text())))),
-             "imgWidth": self.clean_chars(int(float(self.non_empty(self.input_pixel_width.text())))),
-             "imgHeight": self.clean_chars(int(float(self.non_empty(self.input_pixel_height.text())))),
-             "pitch": self.non_empty(self.input_pixel_pitch.text()),
-             "rulePixel": self.clean_chars(self.non_empty(self.input_rule_pixel.text())),
-             "ruleReal": self.clean_chars(self.non_empty(self.input_rule_real.text())),
-             "resolution": self.clean_chars(self.non_empty(self.input_ppi_resolution.text()))
+        width_sensor = self.parse_float(self.input_width.text())
+        height_sensor = self.parse_float(self.input_height.text())
+        image_width = self.parse_float(self.input_pixel_width.text())
+        image_height = self.parse_float(self.input_pixel_height.text())
+        pitch = self.parse_float(self.input_pixel_pitch.text())
+        rule_pixel = self.parse_float(self.input_rule_pixel.text())
+        rule_real = self.parse_float(self.input_rule_real.text())
+        resolution = self.parse_float(self.input_ppi_resolution.text())
 
+        values = [width_sensor, height_sensor, image_width, image_height, pitch, rule_pixel, rule_real, resolution]
+        if any(value is None for value in values):
+            return AppWarningsClass.critical_warn("Some value is not numeric")
 
-             }
+        o = {"widthSensor": int(width_sensor),
+             "heightSensor": int(height_sensor),
+             "imgWidth": int(image_width),
+             "imgHeight": int(image_height),
+             "pitch": pitch,
+             "rulePixel": rule_pixel,
+             "ruleReal": rule_real,
+             "resolution": resolution}
 
         s = self.camerainfo.save_camera_values(o)
 

@@ -8,7 +8,8 @@ class ImgTransformClass:
 
     def __init__(self, image_path, profile_path):
 
-        self.in_image = Image.open(image_path)
+        with Image.open(image_path) as in_image:
+            self.in_image = in_image.copy()
         self.mode = self.in_image.mode
 
         self.width, self.height = self.in_image.size

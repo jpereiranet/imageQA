@@ -219,21 +219,19 @@ class GetMTFClass:
         binpositions = binedges[0:numbins] + (0.5) * pixel_subdiv
         h, whichbin = np.histogram(array_positions_by_edge, binedges)
         whichbin = np.digitize(array_positions_by_edge, binedges)
-        binmean = np.empty(numbins)
+        binmean = np.full(numbins, np.nan, dtype=float)
 
         # print(binmean)
 
-        for i in range(0, numbins):
-
+        for i in range(1, numbins + 1):
             flagbinmembers = (whichbin == i)
             binmembers = array_values_by_edge[flagbinmembers]
-            # cuando binmembers tiene longitud 0 np.mean arroja el error de " RuntimeWarning: invalid value encountered in scalar divide" y  "RuntimeWarning: Mean of empty slice"
-            binmean[i] = np.mean(binmembers)
-
-
-
+            if binmembers.size > 0:
+                binmean[i - 1] = np.mean(binmembers)
 
         nans, x = self.nan_helper(binmean)
+        if np.all(nans):
+            return AppWarningsClass.critical_warn("No edge was detect! Move the ROI over a edge")
         binmean[nans] = np.interp(x(nans), x(~nans), binmean[~nans])
         esf = binmean
         xesf = binpositions

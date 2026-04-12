@@ -12,7 +12,10 @@ class GetMetadataClass:
 
         self.filename = filename
 
-        self.img = Image.open(self.filename)
+        with Image.open(self.filename) as img:
+            self.img_format = img.format
+            self.img_info = dict(img.info)
+            self.img_size = img.size
 
         # print(self.getSensorInfo() )
 
@@ -22,8 +25,8 @@ class GetMetadataClass:
         aperture = 0
         iso = 0
 
-        if self.img.format == "PNG":
-            data = self.img.info['XML:com.adobe.xmp']
+        if self.img_format == "PNG" and 'XML:com.adobe.xmp' in self.img_info:
+            data = self.img_info['XML:com.adobe.xmp']
             var = XmpParser(data).read_meta
             var = var["http://ns.adobe.com/exif/1.0/"]
 
@@ -41,12 +44,11 @@ class GetMetadataClass:
             if 'ISOSpeedRatings' in var:
                 iso = var['ISOSpeedRatings']
             else:
-                aperture = 0
+                iso = 0
 
-        elif self.img.format == "JPEG" or self.img.format == "TIFF":
-
-            self.im = open(self.filename, 'rb')
-            metadata = exifread.process_file(self.im)
+        elif self.img_format == "JPEG" or self.img_format == "TIFF":
+            with open(self.filename, 'rb') as image_file:
+                metadata = exifread.process_file(image_file)
 
             if "EXIF ExposureTime" in metadata:
                 exposure = metadata["EXIF ExposureTime"]
@@ -103,14 +105,14 @@ class GetMetadataClass:
         heightSensor = 0
         pitch = 0
 
-        if (self.img.format == "PNG") and ('XML:com.adobe.xmp' in self.img.info):
+        if (self.img_format == "PNG") and ('XML:com.adobe.xmp' in self.img_info):
             factorCrop = 0
             widthSensor = 0
             heightSensor = 0
             pitch = 0
 
             #considrar usar "Focal Plane X Resolution"?
-            data = self.img.info['XML:com.adobe.xmp']
+            data = self.img_info['XML:com.adobe.xmp']
             var = XmpParser(data).read_meta
             if "http://ns.adobe.com/exif/1.0/" in var:
                 var = var["http://ns.adobe.com/exif/1.0/"]
@@ -121,7 +123,7 @@ class GetMetadataClass:
                     imgWidth,imgHeigh = self.forcelanscape(imgWidth, imgHeigh)
 
                 else:
-                    width, height = self.img.size
+                    width, height = self.img_size
                     imgWidth,imgHeigh = self.forcelanscape(width, height)
 
                 if "FocalLengthIn35mmFilm" in var and "FocalLength" in var:
@@ -140,9 +142,9 @@ class GetMetadataClass:
 
 
 
-        elif self.img.format == "JPEG" or self.img.format == "TIFF":
-            self.im = open(self.filename, 'rb')
-            metadata = exifread.process_file(self.im)
+        elif self.img_format == "JPEG" or self.img_format == "TIFF":
+            with open(self.filename, 'rb') as image_file:
+                metadata = exifread.process_file(image_file)
             # print(meta)
 
             if "EXIF ExifImageWidth" in metadata and "EXIF ExifImageLength" in metadata:
@@ -150,7 +152,7 @@ class GetMetadataClass:
                 imgHeigh = str(metadata["EXIF ExifImageLength"])
                 imgWidth, imgHeigh = self.forcelanscape(imgWidth, imgHeigh)
             else:
-                width, height = self.img.size
+                width, height = self.img_size
                 imgWidth, imgHeigh = self.forcelanscape(width, height)
 
             if "EXIF FocalLengthIn35mmFilm" in metadata and "EXIF FocalLength" in metadata:

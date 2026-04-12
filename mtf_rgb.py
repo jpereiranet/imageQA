@@ -247,7 +247,7 @@ class GetMTFClassRGB:
         #print("max dim",maxdimension)
         #print("min dim", mindimension)
 
-        if maxdimension is not mindimension:
+        if maxdimension != mindimension:
 
             rd = np.prod(ch_red.shape)
             total = maxdimension - rd
@@ -514,9 +514,9 @@ class GetMTFClassRGB:
 
         # crea una imagen con el ROI definido para dejar constancia donde se hace la seleccion
 
-        in_image = Image.open(self.filename)
-        rgbimg = Image.new("RGBA", in_image.size)
-        rgbimg.paste(in_image)
+        with Image.open(self.filename) as in_image:
+            rgbimg = Image.new("RGBA", in_image.size)
+            rgbimg.paste(in_image)
 
         ancho = int(self.roi[2] - self.roi[0])
         alto = int(self.roi[3] - self.roi[1])

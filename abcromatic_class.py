@@ -29,13 +29,19 @@ class GetAbCromatic:
             self.despTxt_y = 0.009
 
         self.image = cv2.imread(pathToimage)
+        if self.image is None:
+            self.height = 0
+            self.width = 0
+            return
+
         self.height = self.image.shape[0]
         self.width = self.image.shape[1]
 
 
     def getAberration(self):
 
-
+        if self.image is None:
+            return None
 
         self.radio = int(self.radio * float(self.width))
         self.text = self.text * float(self.width)

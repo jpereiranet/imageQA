@@ -30,7 +30,8 @@ class getImageColors:
 
         self.ratio = self.im.get_ratio_transform()
 
-        self.rgb_image = Image.open(rgb_image)
+        with Image.open(rgb_image) as rgb_image_handle:
+            self.rgb_image = rgb_image_handle.copy()
 
         if len(pos) == 4:
             self.pos = self.scale_coordinates_roi(pos)

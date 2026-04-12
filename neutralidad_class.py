@@ -14,7 +14,8 @@ class GetFallOffClass():
         self.im = ImgTransformClass(rgb_image, None)
         self.ratio = self.im.get_ratio_transform()
 
-        self.rgb_image = Image.open(rgb_image).convert('L')
+        with Image.open(rgb_image) as rgb_image_handle:
+            self.rgb_image = rgb_image_handle.convert('L')
 
         self.coor = self.scale_coordinates(pos)
 

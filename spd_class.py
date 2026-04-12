@@ -14,11 +14,10 @@ class GetSPDClass():
         self.roi = self.scale_coordinates(roi,ratio)
 
         image_data = cv2.imread(filename,cv2.IMREAD_UNCHANGED)
-        self.chns = len(image_data.shape)
-
         if image_data is None:
             return AppWarningsClass.critical_warn("Unsupported image format")
 
+        self.chns = len(image_data.shape)
         self.roi_data = image_data[int(self.roi[1]):int(self.roi[3]), int(self.roi[0]):int(self.roi[2])]
 
 
@@ -125,5 +124,4 @@ class GetSPDClass():
 
 
         return {"curve": y, "stats": "", "x_axis": x_str}
-
 

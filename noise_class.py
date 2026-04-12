@@ -56,9 +56,9 @@ class GetNoiseClass():
 
         s = self.stats(o, "RGB")
 
-        sorted(self.x_scale,reverse=True)
+        sorted_x_scale = sorted(self.x_scale, reverse=True)
         x_scale = []
-        for d in self.x_scale:
+        for d in sorted_x_scale:
             x_scale.append(str(d))
 
         return {"curve": self.new_order_by_list(o,self.x_scale), "stats": s, "x_axis": x_scale}
@@ -91,9 +91,9 @@ class GetNoiseClass():
 
         #print(self.new_order_by_list(o,self.x_scale))
 
-        sorted(self.x_scale,reverse=True)
+        sorted_x_scale = sorted(self.x_scale, reverse=True)
         x_scale = []
-        for d in self.x_scale:
+        for d in sorted_x_scale:
             x_scale.append(str(d))
 
         return {"curve": self.new_order_by_list(o,self.x_scale), "stats": s, "x_axis": x_scale}
@@ -116,9 +116,9 @@ class GetNoiseClass():
 
         #print(self.x_scale)
 
-        sorted(self.x_scale,reverse=True)
+        sorted_x_scale = sorted(self.x_scale, reverse=True)
         x_scale = []
-        for d in self.x_scale:
+        for d in sorted_x_scale:
             x_scale.append(str(d))
 
         return {"curve": self.new_order_by_list(o,self.x_scale), "stats": s, "x_axis": x_scale}

@@ -59,9 +59,8 @@ class GetOECFClass:
 
         s = self.get_oecf_stats(o, "LGAIN")
 
-        sorted(self.density)
         str_density = []
-        for d in self.density:
+        for d in self.density[:len(o)]:
             str_density.append(str(d))
 
         return {"curve": o, "stats":s, "x_axis": str_density }
@@ -90,7 +89,7 @@ class GetOECFClass:
 
             Rr = self.refLab[x]["RGB_R"]
             Gr = self.refLab[x]["RGB_G"]
-            Br = self.refLab[x]["RGB_R"]
+            Br = self.refLab[x]["RGB_B"]
 
             luma_ref = self.refLab[x]["LUMA"]
 
@@ -165,9 +164,9 @@ class GetOECFClass:
         #    slope2 = self.best_fit_slope(o)
         #    print("slope2", slope2)
 
-        sorted(self.density)
+        sorted_density = sorted(self.density)
         str_density = []
-        for d in self.density:
+        for d in sorted_density:
             str_density.append(str(d))
 
         return {"curve": o, "stats":s, "x_axis": str_density }

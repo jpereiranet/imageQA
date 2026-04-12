@@ -263,7 +263,7 @@ class HomeUI(QtWidgets.QDialog):
         if not self.validate_coordinates(self.ui.coordenadasReales):
             return AppWarningsClass.critical_warn("Region Of Interest is outside!")
 
-        formatsAvailable = ["RGB"]
+        formatsAvailable = ["RGB", "L"]
         if self.ui.imMode not in formatsAvailable :
             return AppWarningsClass.critical_warn("Color mode "+self.ui.imMode+" != support, only RGB or grayscale")
 
@@ -322,8 +322,11 @@ class HomeUI(QtWidgets.QDialog):
         if self.ui.imMode not in formatsAvailable :
             return AppWarningsClass.critical_warn("Color mode "+self.ui.imMode+" != support, only RGB or grayscale")
 
-        if len(self.ui.multipleFiles) > 2:
-            return AppWarningsClass.informative_warn("You have chosen " + str(len(self.ui.multipleFiles)) + "files, you must choose only two files")
+        if not hasattr(self.ui, 'multipleFiles'):
+            return AppWarningsClass.informative_warn("You must choose exactly two files")
+
+        if len(self.ui.multipleFiles) != 2:
+            return AppWarningsClass.informative_warn("You have chosen " + str(len(self.ui.multipleFiles)) + " files, you must choose exactly two files")
 
         try:
 
@@ -331,7 +334,7 @@ class HomeUI(QtWidgets.QDialog):
             data = imgDiffStats.image_stats()
             if data:
                 dialog = QtWidgets.QDialog()
-                dialog.ui = ImgDiffGui(imgDiffStats.image_stats(), imgDiffStats.np_im)
+                dialog.ui = ImgDiffGui(data, imgDiffStats.np_im)
                 dialog.ui.setupUi(dialog)
                 dialog.setAttribute(Qt.WA_DeleteOnClose)
                 dialog.exec_()
@@ -519,21 +522,47 @@ class HomeUI(QtWidgets.QDialog):
             dialog.setAttribute(Qt.WA_DeleteOnClose)
             dialog.exec_()
 
+    def _inside_image_limits(self, x, y):
+
+        img_width = getattr(self.ui, "imgWidth", None)
+        img_height = getattr(self.ui, "imgHeight", None)
+
+        if img_width is None or img_height is None:
+            return True
+
+        return x <= img_width and y <= img_height
+
     def validate_coordinates(self, coordenadas):
 
-        if isinstance(coordenadas[0], list):
-            std = True
-            for x in range(len(coordenadas)):
-                for y in range(len(coordenadas[x])):
-                    if coordenadas[x][y] < 0:
-                        std = False
-        else:
-            std = True
-            for x in range(len(coordenadas)):
-                if coordenadas[x] < 0:
-                    std = False
+        if not coordenadas:
+            return False
 
-        return std
+        if isinstance(coordenadas[0], (list, tuple)):
+            for point in coordenadas:
+                if len(point) < 2:
+                    return False
+                x, y = point[0], point[1]
+                if x < 0 or y < 0:
+                    return False
+                if not self._inside_image_limits(x, y):
+                    return False
+            return True
+
+        if len(coordenadas) < 4:
+            return False
+
+        x1, y1, x2, y2 = coordenadas[:4]
+        if x1 < 0 or y1 < 0 or x2 < 0 or y2 < 0:
+            return False
+        if x2 <= x1 or y2 <= y1:
+            return False
+
+        if not self._inside_image_limits(x1, y1):
+            return False
+        if not self._inside_image_limits(x2, y2):
+            return False
+
+        return True
 
 
 

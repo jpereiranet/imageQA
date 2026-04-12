@@ -121,6 +121,9 @@ class GetDistortion:
         # criteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 30, 0.001)
 
         img = cv2.imread(img)
+        if img is None:
+            return (None, False, None, None)
+
         height = img.shape[0]
         width = img.shape[1]
         self.radio = int(self.radio * float(width))
@@ -352,6 +355,5 @@ class GetDistortion:
 #path = '/Volumes/SanDiskSSD/experimentos_tesis/distorsion/practica/DSC_4398_2B.TIF'
 #x = GetDistortion()
 #print( x.getDistortion(path) )
-
 
 

@@ -38,6 +38,8 @@ class MultipleTestClass(object):
         self.icc = perfil_nuevo
         self.chartIndex = chartIndex
         self.charts = ChartPatternsClass()
+        self._cgats_reference = None
+        self._deltas_cache = None
 
     def setupUi(self, MultipleDialog):
 
@@ -110,9 +112,10 @@ class MultipleTestClass(object):
         index = self.comboBox.currentIndex()
 
         if index == 1:
+            deltas = self.get_m_deltas()
 
-            stats = [("CIE76", self.get_means_color("CIE76")),
-                     ("CIE00", self.get_means_color("CIE00"))
+            stats = [("CIE76", self.get_means_color("CIE76", deltas)),
+                     ("CIE00", self.get_means_color("CIE00", deltas))
                      ]
 
         elif index == 2:
@@ -147,6 +150,12 @@ class MultipleTestClass(object):
             dialog.exec_()
 
     # empiezan las funcioens de analisis
+
+    def get_cgats_reference(self):
+
+        if self._cgats_reference is None:
+            self._cgats_reference = GetCGATSClass(self.cgats)
+        return self._cgats_reference
 
     def get_m_mtf(self):
 
@@ -251,12 +260,14 @@ class MultipleTestClass(object):
 
     def get_m_deltas(self):
 
+        if self._deltas_cache is not None:
+            return self._deltas_cache
+
         o = {}
         i = 0
+        valoresReferencia = self.get_cgats_reference()
         for filename in self.multipleFiles:
             valoresLAB = getImageColors(self.coords, str(filename), self.icc)
-            valoresReferencia = GetCGATSClass(self.cgats)
-
             deltas = GetDeltasClass(valoresLAB.get_lab_values(), valoresReferencia.labCGATS)
 
             self.check_item(os.path.basename(str(filename)))
@@ -270,11 +281,13 @@ class MultipleTestClass(object):
 
             i = i + 1
 
+        self._deltas_cache = o
         return o
 
-    def get_means_color(self, field):
+    def get_means_color(self, field, arr=None):
 
-        arr = self.get_m_deltas()
+        if arr is None:
+            arr = self.get_m_deltas()
 
         o = []
         for x in arr:
@@ -317,13 +330,13 @@ class MultipleTestClass(object):
 
         o = {}
         i = 0
+        valoresReferencia = self.get_cgats_reference()
         for filename in self.multipleFiles:
             meta = GetMetadataClass(str(filename))
             filen = os.path.basename(str(filename))
             exposure = meta.get_exposure() + (filen,)
 
             valoresLAB = getImageColors(self.coords, str(filename), self.icc)
-            valoresReferencia = GetCGATSClass(self.cgats)
 
             #OECF = GetOECFClass(valoresLAB.get_rgb_values(), valoresReferencia.RGB, valoresLAB.get_lab_values(),
             #                           valoresReferencia.labCGATS)

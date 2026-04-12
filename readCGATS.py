@@ -10,7 +10,8 @@ class GetCGATSClass:
 
     def __init__(self, cgatsFile):
         self.cgatsFile = cgatsFile
-        self.f = open(self.cgatsFile, "r")
+        with open(self.cgatsFile, "r") as cgats_handle:
+            self.lines = cgats_handle.readlines()
 
         idxData = self.get_lab_from_cgats()
         self.read_cgats_file(idxData)
@@ -21,7 +22,7 @@ class GetCGATSClass:
 
         start = 0
         end = 0
-        for idx, item in enumerate(self.f):
+        for idx, item in enumerate(self.lines):
             v = item.strip()
 
             if v == "BEGIN_DATA_FORMAT":
@@ -29,10 +30,8 @@ class GetCGATSClass:
             if v == "END_DATA_FORMAT":
                 end = idx
 
-        self.f.seek(0)
-
         fields = []
-        for idx, item in enumerate(self.f):
+        for idx, item in enumerate(self.lines):
 
             if idx > start and idx < end:
                 fields.append(item.split())
@@ -62,8 +61,7 @@ class GetCGATSClass:
 
         start = 0
         end = 0
-        self.f.seek(0)
-        for idx, item in enumerate(self.f):
+        for idx, item in enumerate(self.lines):
             v = item.strip()
 
             if v == "BEGIN_DATA":
@@ -71,13 +69,11 @@ class GetCGATSClass:
             if v == "END_DATA":
                 end = idx
 
-        self.f.seek(0)
-
         self.labCGATS = []
 
-        for idx, item in enumerate(self.f):
+        for idx, item in enumerate(self.lines):
 
-            if item.strip() is not "" and not item.strip().startswith("#"):
+            if item.strip() != "" and not item.strip().startswith("#"):
                 if idx > start and idx < end:
                     item = item.split()
                     values = []
