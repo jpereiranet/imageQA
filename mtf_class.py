@@ -43,17 +43,16 @@ class GetMTFClass:
 
         self.min = np.amin(self.data)
         self.max = np.amax(self.data)
-        self.threshold = th * (self.max - self.min) + self.min
-        #cv2.imwrite("threshold_contrast.png", self.threshold)
 
-        below_thresh = ((self.data >= self.min) & (self.data <= self.threshold))
-        above_thresh = ((self.data >= self.threshold) & (self.data <= self.max))
-        area_below_thresh = self.data[below_thresh].sum() / below_thresh.sum()
-        area_above_thresh = self.data[above_thresh].sum() / above_thresh.sum()
-        self.threshold = (area_below_thresh - area_above_thresh) / 2 + area_above_thresh
-        #cv2.imwrite("threshold_contrast_2.png", self.threshold)
-        # esta es la imagen con los bordes
-        self.edges = cv2.Canny(th, self.min, self.max - 5, 3, L2gradient=True)
+        # A1-FIX: Use boolean mask from Otsu instead of broken scaled-binary threshold
+        mask = th > 0
+        area_dark = float(self.data[~mask].mean()) if (~mask).any() else float(self.min)
+        area_bright = float(self.data[mask].mean()) if mask.any() else float(self.max)
+        self.threshold = (area_dark + area_bright) / 2.0
+
+        # M3-FIX: Morphological gradient for edge detection on binary image
+        kernel_edge = np.ones((3, 3), np.uint8)
+        self.edges = cv2.morphologyEx(th, cv2.MORPH_GRADIENT, kernel_edge)
 
         #cv2.imwrite("edge.png", self.edges)
 
@@ -68,7 +67,7 @@ class GetMTFClass:
 
             z = np.polyfit(np.flipud(col_edge), row_edge, 1)
             angle_radians = np.arctan(z[0])
-            angle_deg = angle_radians * (180 / 3.14)
+            angle_deg = np.degrees(angle_radians)  # A4-FIX: precise pi
             real_angle = round( 90 - abs(angle_deg),0)
             #print("angle_deg")
             #print(real_angle)
@@ -159,7 +158,10 @@ class GetMTFClass:
                    "No edge was detect! Perhaps ROI has insuficient contrast")
 
             #print(strip_cropped)
-            f = interpolate.interp1d(strip_cropped, temp_y, kind='nearest')
+            # A5-FIX: Linear interpolation for sub-pixel edge precision
+            sort_idx = np.argsort(strip_cropped)
+            f = interpolate.interp1d(strip_cropped[sort_idx], temp_y[sort_idx],
+                                     kind='linear', fill_value='extrapolate')
 
             edge_pos_temp = f(self.threshold)
 
@@ -211,6 +213,7 @@ class GetMTFClass:
         #pixel_subdiv = 0.10
         bin_pad = 0.0001
         pixel_subdiv = 0.09
+        self.pixel_subdiv = pixel_subdiv  # M1-FIX: store for compute_mtf
         topedge = np.amax(array_positions_by_edge) + bin_pad + pixel_subdiv
         botedge = np.amin(array_positions_by_edge) - bin_pad
         binedges = np.arange(botedge, topedge + 1, pixel_subdiv)
@@ -238,7 +241,12 @@ class GetMTFClass:
         xesf = xesf - np.amin(xesf)
         self.xesf = xesf
 
-        esf_smooth = savgol_filter(esf, 25, 3)
+        # M7-FIX: Adaptive Savgol window size
+        sg_window = min(25, len(esf) if len(esf) % 2 == 1 else len(esf) - 1)
+        sg_window = max(sg_window, 5)
+        if sg_window % 2 == 0:
+            sg_window -= 1
+        esf_smooth = savgol_filter(esf, sg_window, min(3, sg_window - 1))
         #self.esf = esf
         #self.esf_smooth = esf_smooth
 
@@ -246,40 +254,48 @@ class GetMTFClass:
 
         return {"xesf":xesf, "esf":esf, "esf_smooth":esf_smooth}
 
-    def compute_lsf(self, xesf, esf, esf_smooth ):
+    def compute_lsf(self, xesf, esf, esf_smooth):
+        # A2-FIX: Properly scaled derivative preserving sign
+        dx = xesf[1] - xesf[0] if len(xesf) > 1 else 1.0
+        lsf = np.gradient(esf, dx)
+        lsf_smooth = np.gradient(esf_smooth, dx)
 
-        diff_esf = abs(esf[1:] - esf[0:(esf.shape[0] - 1)])
-        diff_esf = np.append(0, diff_esf)
-        lsf = diff_esf
-        diff_esf_smooth = abs(esf_smooth[0:(esf.shape[0] - 1)] - esf_smooth[1:])
-        diff_esf_smooth = np.append(0, diff_esf_smooth)
-        lsf_smooth = diff_esf_smooth
-        #self.lsf = lsf
-        #self.lsf_smooth = lsf_smooth
+        return {"xesf": xesf, "lsf": lsf, "lsf_smooth": lsf_smooth}
 
-        return {"xesf":xesf, "lsf":lsf, "lsf_smooth":lsf_smooth}
+    def compute_mtf(self, lsf, lsf_smooth):
+        # M2-FIX: Dynamic FFT size (at least 4x zero-padding)
+        N_FFT = max(2048, 2 ** int(np.ceil(np.log2(len(lsf) * 4))))
+        pixel_subdiv = getattr(self, 'pixel_subdiv', 0.09)
 
-    def compute_mtf(self,lsf,lsf_smooth):
+        # C3-FIX: Apply Hamming window before FFT (ISO 12233)
+        window = np.hamming(len(lsf))
+        lsf_windowed = lsf * window
+        lsf_smooth_windowed = lsf_smooth * window
 
-        mtf = np.absolute(np.fft.fft(lsf, 2048))
-        mtf_smooth = np.absolute(np.fft.fft(lsf_smooth, 2048))
+        mtf = np.absolute(np.fft.fft(lsf_windowed, N_FFT))
+        mtf_smooth = np.absolute(np.fft.fft(lsf_smooth_windowed, N_FFT))
         mtf_final = np.fft.fftshift(mtf)
         mtf_final_smooth = np.fft.fftshift(mtf_smooth)
 
-        # plt.subplot(2, 2, 4)
-        x_mtf_final = np.arange(0, 1, 1. / 127)
+        n_bins = 127
+        half = N_FFT // 2
 
-        mtf_final = mtf_final[1024:1151] / np.amax(mtf_final[1024:1151])
-        mtf_final_smooth = mtf_final_smooth[1024:1151] / np.amax(mtf_final_smooth[1024:1151])
+        # C1-FIX: Correct frequency axis in cycles/pixel
+        freq_resolution = 1.0 / (N_FFT * pixel_subdiv)
+        x_mtf_final = np.arange(n_bins) * freq_resolution
 
-        #print("x_mtf_final  mtf_final   mtf_final_smooth")
-        #for x in range(len(x_mtf_final)):
-        #    print(str(x_mtf_final[x])+" "+str(mtf_final[x])+"   "+str(mtf_final_smooth[x]))
+        mtf_final = mtf_final[half:half + n_bins] / np.amax(mtf_final[half:half + n_bins])
+        mtf_final_smooth = mtf_final_smooth[half:half + n_bins] / np.amax(mtf_final_smooth[half:half + n_bins])
 
-        return { "x_mtf_final":x_mtf_final,
-                 "mtf_final": mtf_final,
-                 "mtf_final_smooth": mtf_final_smooth
-                 }
+        # Nyquist position index (0.5 cycles/pixel)
+        nyquist_pos = min(int(round(0.5 / freq_resolution)), n_bins - 1)
+
+        return {"x_mtf_final": x_mtf_final,
+                "mtf_final": mtf_final,
+                "mtf_final_smooth": mtf_final_smooth,
+                "nyquist_pos": nyquist_pos,
+                "freq_resolution": freq_resolution
+                }
 
 
     def showImage(self, image):

@@ -8,7 +8,7 @@ from ImgTransformClass import ImgTransformClass
 from PIL import Image
 from plist_set import ProcessSettingsClass
 
-from scipy.integrate import simps
+# B2-FIX: removed unused 'from scipy.integrate import simps'
 
 class GetMTFClassRGB:
 
@@ -170,107 +170,65 @@ class GetMTFClassRGB:
 
                 return  self.getRGBMTF(channels)
 
-    def rise(self,ch):
+    def rise(self, ch):
+        # A3-FIX: Safe 10-90% rise with interpolation, no UnboundLocalError risk
+        x = np.array(ch["xesf"])
+        y = np.array(ch["esf"])
 
-        x = ch["xesf"].tolist()
-        y = ch["esf"].tolist()
+        ymin = np.min(y)
+        yoffset = y - ymin
+        ymax = np.max(yoffset)
 
-        ymin = min(y)
-        yofset = [i-ymin for i in y]
+        if ymax == 0:
+            return 0.0
 
-        yofsetmax = max(yofset)
+        y10 = ymax * 0.10
+        y90 = ymax * 0.90
 
-        y10 = (yofsetmax * 10) / 100
-        y90 = (yofsetmax * 90) / 100
+        # Ensure monotonically increasing for np.interp
+        if yoffset[-1] < yoffset[0]:
+            yoffset = yoffset[::-1]
+            x = x[::-1]
 
-        for i in range(len(yofset)):
-            if y10 > yofset[i]:
-                i10 = i
-            elif y90 > yofset[i]:
-                i90 = i
+        x10 = np.interp(y10, yoffset, x)
+        x90 = np.interp(y90, yoffset, x)
 
-        xlow = x[i10]
-        xtop = x[i90]
-
-        risevalue = xtop - xlow
-
-        return risevalue
-
+        return abs(x90 - x10)
 
 
 
 
-    def missregistration(self,r,g,b):
 
+    def missregistration(self, r, g, b):
         ch_red = r["esf"]
         ch_green = g["esf"]
         ch_blue = b["esf"]
 
-        #print("rojo", np.prod(ch_red.shape) )
-        #print("verde", np.prod(ch_green.shape) )
-        #print("azul",  np.prod(ch_blue.shape) )
+        ch_red, ch_green, ch_blue, _ = self.normaliceDimensions(ch_red, ch_green, ch_blue)
 
-        ch_red, ch_green, ch_blue, xindex = self.normaliceDimensions( ch_red, ch_green, ch_blue)
+        n = len(ch_red)  # All same length after normalization
+        x = r["xesf"][:n]
 
-        channels = [ch_red,ch_green,ch_blue]
-        xindexes = [r["xesf"],g["xesf"],b["xesf"]]
-        x = xindexes[xindex]
-
-        curve_levels = [np.sum(ch_red), np.sum(ch_green), np.sum(ch_blue) ]
-
+        channels = [ch_red, ch_green, ch_blue]
+        curve_levels = [np.sum(ch_red), np.sum(ch_green), np.sum(ch_blue)]
         curvemax = curve_levels.index(min(curve_levels))
         curvemin = curve_levels.index(max(curve_levels))
-
-        #print("curva maxima",curvemax )
-        #print("curva curvemin", curvemin)
-        #print("puntos",len(ch_red))
 
         difcurve = np.subtract(channels[curvemax], channels[curvemin])
 
         # calcula la area de la curva
         area = trapz(difcurve, x)
-        ca = round(abs(area/len(x)), 1)
-        #print("CA =", ca )
+        ca = round(abs(area / n), 1)
 
         return ca
 
-    def normaliceDimensions(self, ch_red,ch_green,ch_blue):
-
-        numpies = [ ch_red,ch_green,ch_blue]
-        dimensions = [ np.prod(ch_red.shape), np.prod(ch_green.shape), np.prod(ch_blue.shape) ]
-
-        maxdimension = max(dimensions)
-        mindimension = min(dimensions)
-        maxdIndex = dimensions.index(max(dimensions))
-        minvalue = min(numpies[maxdIndex])
-        maxvalue = max(numpies[maxdIndex])
-        #print("max dim",maxdimension)
-        #print("min dim", mindimension)
-
-        if maxdimension != mindimension:
-
-            rd = np.prod(ch_red.shape)
-            total = maxdimension - rd
-            if total > 0:
-                npvalues = np.zeros(total)
-                npvalues.fill(maxvalue)
-                ch_red = np.append(ch_red,npvalues  )
-
-            rd = np.prod(ch_green.shape)
-            total = maxdimension - rd
-            if total > 0:
-                npvalues = np.zeros(total)
-                npvalues.fill(maxvalue)
-                ch_green = np.append(ch_green,npvalues )
-
-            rd = np.prod(ch_blue.shape)
-            total = maxdimension - rd
-            if total > 0:
-                npvalues = np.zeros(total)
-                npvalues.fill(maxvalue)
-                ch_blue = np.append(ch_blue,npvalues  )
-
-        return [ch_red, ch_green, ch_blue, maxdIndex ]
+    def normaliceDimensions(self, ch_red, ch_green, ch_blue):
+        # M4-FIX: Truncate to minimum length instead of padding with artifacts
+        min_len = min(len(ch_red), len(ch_green), len(ch_blue))
+        ch_red = ch_red[:min_len]
+        ch_green = ch_green[:min_len]
+        ch_blue = ch_blue[:min_len]
+        return [ch_red, ch_green, ch_blue, 0]
 
 
     def isgray(self, img):
@@ -306,30 +264,25 @@ class GetMTFClassRGB:
             mtf_per_channel[key] = mtf
 
 
-            metrics = { "MTF50":0.5, "MTF30":0.3, "MTF10":0.1 }
+            metrics = {"MTF50": 0.5, "MTF30": 0.3, "MTF10": 0.1}
 
-
-            for metric,value in metrics.items():
+            for metric, threshold in metrics.items():  # B3-FIX: renamed to avoid shadowing
                 mtf_per_channel[key][metric] = {}
-                MTF = self.MTFatLimit(mtf["mtf_final"], mtf["x_mtf_final"], value)
-                derived_metrics = self.otherMetrics(MTF)
+                MTF = self.MTFatLimit(mtf["mtf_final"], mtf["x_mtf_final"], threshold)
 
-
-                if MTF < 0.5:
-                    #print("GETLimits", MTF)
-                    #print("metrica",value)
+                if MTF is not None and MTF < 0.5:
+                    derived_metrics = self.otherMetrics(MTF)
                     mtf_per_channel[key][metric]["MTF"] = MTF
-                    mtf_per_channel[key][metric]["MTFpercent"] =  derived_metrics["MTFpercent"]
+                    mtf_per_channel[key][metric]["MTFpercent"] = derived_metrics["MTFpercent"]
                     mtf_per_channel[key][metric]["LPmm"] = derived_metrics["LPmm"]
                     mtf_per_channel[key][metric]["LW_PH"] = derived_metrics["LW_PH"]
                     mtf_per_channel[key][metric]["LPH"] = derived_metrics["LPH"]
                     mtf_per_channel[key][metric]["lpPercent"] = derived_metrics["lpPercent"]
                     mtf_per_channel[key][metric]["imgLPmm"] = derived_metrics["imgLPmm"]
                     mtf_per_channel[key][metric]["lpNyquist"] = derived_metrics["lpNyquist"]
-
                 else:
                     mtf_per_channel[key][metric]["MTF"] = None
-                    mtf_per_channel[key][metric]["MTFpercent"] =  None
+                    mtf_per_channel[key][metric]["MTFpercent"] = None
                     mtf_per_channel[key][metric]["LPmm"] = None
                     mtf_per_channel[key][metric]["LW_PH"] = None
                     mtf_per_channel[key][metric]["LPH"] = None
@@ -364,16 +317,13 @@ class GetMTFClassRGB:
 
 
     def MTFatLimit(self, mtf, xmtf, limit):
-
-        redondear = lambda x: round(x, 1)
-        y_rounded = list(map(redondear, mtf))
-        pos01 = [i for i, x in enumerate(y_rounded) if x == limit]
-        mtfs10 = [np.ndarray.tolist(xmtf)[i] for i in pos01]
-        if (len(mtfs10) > 0):
-            mtf10 = sum(mtfs10) / len(mtfs10)
-        else:
-            mtf10 = 0  # revisar esto!!!
-        return round(mtf10, 2)
+        # C2-FIX: Linear interpolation to find exact crossing point
+        for i in range(len(mtf) - 1):
+            if mtf[i] >= limit > mtf[i + 1]:
+                t = (limit - mtf[i]) / (mtf[i + 1] - mtf[i])
+                freq = xmtf[i] + t * (xmtf[i + 1] - xmtf[i])
+                return round(float(freq), 4)
+        return None  # No crossing found (aliasing or insufficient contrast)
 
 
     def otherMetrics(self,MTF):
@@ -390,7 +340,9 @@ class GetMTFClassRGB:
 
         if resolution:
 
-            lpNyquist = round( ( float(resolution) / 2) / 24.4, 2)  #esto define e limite de Nyquist en Lp/mm
+            # M6-FIX: Use sensor height in mm from config instead of hardcoded 24.4
+            sensor_dim = float(heightSensor) if heightSensor and float(heightSensor) > 0 else 24.4
+            lpNyquist = round((float(resolution) / 2) / sensor_dim, 2)
             linesMM = lpNyquist * 2  #eso da la relacion de Lineas/mm en la imagen
             imgLPmm = round(linesMM * MTF, 2)  #esto da las Lp/mm a un %MTF dado, convierte de c/p a la Lp/mm para el tamaño de imagen
             lpPercent = round((imgLPmm * 100) / lpNyquist, 1) # % respecto a Nyquist
@@ -472,12 +424,12 @@ class GetMTFClassRGB:
 
         metrics = {"MTF50": 0.5, "MTF30": 0.3, "MTF10": 0.1}
 
-        for metric, value in metrics.items():
+        for metric, threshold in metrics.items():  # B3-FIX: renamed to avoid shadowing
             mtf_channel["GRAY"][metric] = {}
-            MTF = self.MTFatLimit(mtf["mtf_final"], mtf["x_mtf_final"], value)
-            derived_metrics = self.otherMetrics(MTF)
+            MTF = self.MTFatLimit(mtf["mtf_final"], mtf["x_mtf_final"], threshold)
 
-            if MTF < 0.5:
+            if MTF is not None and MTF < 0.5:
+                derived_metrics = self.otherMetrics(MTF)
                 mtf_channel["GRAY"][metric]["MTF"] = MTF
                 mtf_channel["GRAY"][metric]["MTFpercent"] = derived_metrics["MTFpercent"]
                 mtf_channel["GRAY"][metric]["LPmm"] = derived_metrics["LPmm"]

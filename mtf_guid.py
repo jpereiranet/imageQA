@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-import time, math
+import time, math, os
 
 import numpy as np
 import pyqtgraph as pg
@@ -168,7 +168,7 @@ class MtfUI(object):
             exporter = pyqtgraph.exporters.ImageExporter(plot.plotItem)
             #exporter.parameters()['width'] = 800  # (note this also affects height parameter)
             exporter.params['width'] = 717
-            exporter.export(fname + "/" + key + "_" + timestr + '.png')
+            exporter.export(os.path.join(fname, key + "_" + timestr + '.png'))  # B7-FIX: cross-platform path
             self.params.save_setting('rootfolderSAVE', str(fname))
 
     def exportList(self, value, key):
@@ -300,29 +300,36 @@ class MtfUI(object):
         self.my_plot[x] = pg.PlotWidget(name='Plot1')
         self.my_plot[x].setMenuEnabled(False)
 
-        newxdic = {0: "0.0", 1: "", 2: "", 3: "", 4: "", 5: "", 6: "", 7: "", 8: "", 9: "", 10: "", 11: "",
-                   12: "",13: "0.1", 14: "", 15: "", 16: "", 17: "", 18: "", 19: "", 20: "", 21: "", 22: "", 23: "",
-                   24: "", 25: "0.2", 26: "", 27: "", 28: "", 29: "", 30: "", 31: "", 32: "", 33: "", 34: "", 35: "",
-                   36: "", 37: "", 38: "0.3", 39: "", 40: "", 41: "", 42: "", 43: "", 44: "", 45: "", 46: "", 47: "", 48: "", 49: "", 50: "",
-                   51: "0.4", 52: "", 53: "", 54: "", 55: "", 56: "", 57: "", 58: "", 59: "", 60: "", 61: "", 62: "",
-                   63: "0.5", 64: "", 65: "", 66: "", 67: "", 68: "", 69: "", 70: "", 71: "", 72: "", 73: "", 74: "", 75: "",
-                   76: "0.6", 77: "", 78: "", 79: "", 80: "", 81: "", 82: "", 83: "", 84: "", 85: "", 86: "", 87: "", 88: "",
-                   89: "0.7", 90: "", 91: "", 92: "", 93: "", 94: "", 95: "", 96: "", 97: "", 98: "", 99: "", 100: "",
-                   101: "0.8", 102: "", 103: "", 104: "", 105: "", 106: "", 107: "", 108: "", 109: "", 110: "", 111: "", 112: "", 113: "",
-                   114: "0.9", 115: "", 116: "", 117: "", 118: "", 119: "", 120: "", 121: "", 122: "", 123: "", 124: "", 125: "", 126: "1"}
+        # C1-GUI-FIX: Dynamic tick labels from actual frequency axis
+        first_key = list(values.keys())[0]
+        x_freq = values[first_key].get("x_mtf_final", None)
+        n_points = len(x_freq) if x_freq is not None else 127
+        newxdic = {}
+        if x_freq is not None:
+            # Show labels at ~10 evenly spaced positions
+            step = max(1, n_points // 10)
+            for i in range(n_points):
+                if i % step == 0 or i == n_points - 1:
+                    newxdic[i] = f"{x_freq[i]:.2f}"
+                else:
+                    newxdic[i] = ""
+        else:
+            for i in range(127):
+                newxdic[i] = ""
+
         stringaxis = self.my_plot[x].getAxis('bottom')
-        #newxdic = {0: "0.0",   63: "0.5" ,126: "1"}
         stringaxis.setTicks([newxdic.items()])
-        #stringaxis.setTickSpacing(5, 1)
 
         self.my_plot[x].setObjectName("plot")
 
         self.my_plot[x].setLabel('left', 'Modulation factor', units='')
         self.my_plot[x].setLabel('bottom', 'Cycles/Pixel', units='')
 
+        # Dynamic Nyquist position from MTF computation
+        nyquist_pos = values[first_key].get("nyquist_pos", 63)
         label_opts = {'position': 0.9, 'color': (200, 200, 100),
                       'fill': (200, 200, 200, 50), 'movable': True}
-        t_line = pg.InfiniteLine(pos=63, movable=False, angle=90, label='Nyquist', labelOpts=label_opts)
+        t_line = pg.InfiniteLine(pos=nyquist_pos, movable=False, angle=90, label='Nyquist', labelOpts=label_opts)
         self.my_plot[x].addItem(t_line)
 
         self.my_plot[x].addLegend()
@@ -373,7 +380,7 @@ class MtfUI(object):
         #c2 = self.my_plot[x].plot(smoot, pen='g', name='smoot')
 
 
-        if len(values) == 2:
+        if len(values) == 2 or "RED" not in values:  # B5-FIX: key-based mode detection
             self.my_plot[x].plot(values["GRAY"]["esf"], pen='w', name='Grey')
         else:
             self.my_plot[x].plot(values["RED"]["esf"], pen='r', name='Red')
@@ -448,8 +455,9 @@ class MtfUI(object):
 
             if stats["GRAY"][metric]["MTF"]:
                 o += "<p style=\"line-height:90%; font-size:16px; color:#666\">"
+                mtf_val = round(float(stats["GRAY"][metric]["MTF"]), 2)
                 o += "<strong>"+metric+":</strong> <span style=\"font-size:13px; color:#666\">(" + str(int(stats["GRAY"][metric]["MTFpercent"]))+"%)</span>&nbsp;"+ str(
-                    stats["GRAY"][metric]["MTF"]) + "&nbsp;<italic style=\"font-size:12px; color:#666\">Cycles/pixel</italic>&nbsp;&nbsp;"
+                    mtf_val) + "&nbsp;<italic style=\"font-size:12px; color:#666\">Cycles/pixel</italic>&nbsp;&nbsp;"
 
                 if stats["GRAY"][metric]["imgLPmm"] and stats["GRAY"][metric]["lpNyquist"]:
                     o +=  str(stats["GRAY"][metric]["imgLPmm"])+"/"+str(stats["GRAY"][metric]["lpNyquist"])+"<span style=\"font-size:13px; color:#666\">("+str(int(stats["GRAY"][metric]["lpPercent"]))+"%)</span>&nbsp;<italic style=\"font-size:12px; color:#666\">Lp/mm</italic>&nbsp;&nbsp;"

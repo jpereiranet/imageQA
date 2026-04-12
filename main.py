@@ -1,10 +1,13 @@
 # -*- coding: utf-8 -*-
 
 import os
+os.environ["OPENCV_OPENCL_RUNTIME"] = ""  # Disable OpenCL in OpenCV to avoid rendering issues
+os.environ["OPENCV_OPENCL_DEVICE"] = "disabled"
 import pyqtgraph as pg
 from PIL import ImageCms
 from PyQt5 import QtCore, QtGui, QtWidgets
 from PyQt5.QtWidgets import QFrame, QComboBox, QGraphicsPixmapItem, QApplication
+from PyQt5.QtWidgets import QGraphicsView as _QGV  # for viewport update mode constant
 from ImgTransformClass import ImgTransformClass
 from app_paths import DefinePathsClass
 from camera_information_class import CameraInformationClass
@@ -356,6 +359,21 @@ class MainDialogUI(object):
         # OpenGL in this viewer becomes unstable after repeated ROI/grid rebuilds.
         self.graphicsView = pg.GraphicsView(useOpenGL=False, background=pg.mkColor('#ccc'))
         self.graphicsView.setObjectName("graphicsView")
+
+        # FIX: Force full viewport repaint to prevent ghost trail artifacts
+        # when moving ROI/ruler overlays. Partial updates leave stale red lines.
+        self.graphicsView.viewport().update()
+        gv = self.graphicsView
+        if hasattr(gv, 'setViewportUpdateMode'):
+            gv.setViewportUpdateMode(_QGV.FullViewportUpdate)
+        elif hasattr(gv, 'setCacheMode'):
+            gv.setCacheMode(0)  # QGraphicsView.CacheNone
+
+        # Disable BSP index which can cause stale bounding-rect tracking
+        scene = gv.scene()
+        if scene is not None:
+            scene.setItemIndexMethod(scene.NoIndex)
+
         self.verticalLayout.addWidget(self.graphicsView)
 
         QtCore.QMetaObject.connectSlotsByName(Dialog)
@@ -705,6 +723,8 @@ class MainDialogUI(object):
         self.ruleRoi.removeHandle( self.ruleRoi.handles[2]['item'])
 
         self.ruleRoi.sigRegionChanged.connect(self.rule_state)
+        # FIX: Force scene repaint on ruler move to prevent ghost trails
+        self.ruleRoi.sigRegionChanged.connect(self._invalidate_scene)
 
     def make_roi(self, WIDTH_ROI, HIGHT_ROI):
 
@@ -723,6 +743,8 @@ class MainDialogUI(object):
         self.plotRoi.addRotateHandle([1, 0.5], [0.5, 0.5])
 
         self.plotRoi.sigRegionChanged.connect(self.get_lastState)
+        # FIX: Force scene repaint on ROI move to prevent ghost trails
+        self.plotRoi.sigRegionChanged.connect(self._invalidate_scene)
 
     def rule_state(self):
 
@@ -795,6 +817,12 @@ class MainDialogUI(object):
         self.simb.setOpacity(0.5)
         self.graphicsView.addItem(self.simb)
         self._track_overlay_item(self.simb)
+
+    def _invalidate_scene(self):
+        """Force full scene repaint to clear ghost overlay artifacts."""
+        scene = self.graphicsView.scene()
+        if scene is not None:
+            scene.invalidate(scene.sceneRect())
 
     def footer_advice(self, msg, type):
 
