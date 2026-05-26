@@ -45,9 +45,11 @@ EN: ImageQA is available for installation as executable packages in the form of 
 
 [Mac Osx < 10.14 Mojave](https://github.com/jpereiranet/imageQA/releases/download/v1.9.2/imageQA_installer_mojave.dmg)
 
-[Mac Osx > 10-15 Catalina](https://github.com/jpereiranet/imageQA/releases/download/v1.9.2/imageQA_installer_catalina.dmg)
+[Mac Osx > 10-15 Catalina](https://github.com/jpereiranet/imageQA/releases/download/v.1.9.3/imageQA_installer_catalina.dmg)
 
-[Windows > 7](https://github.com/jpereiranet/imageQA/releases/download/v1.9.2/ImageQA_installer.exe)
+[Windows > 7](https://github.com/jpereiranet/imageQA/releases/download/v.1.9.3/ImageQA_installer.exe)
+
+
 
 ES: En Mac OsX se debe activar la opción `Preferencias del Sistema > Seguridad y Privacidad` y activar la opción `Permitir apps descargadas de` y a continuación, indicar `cualquier sitio`. Pero en versiones > 10.15 esta opción puede estar oculta. Para ello se debe ejecutar en la Terminal `sudo spctl --master-disable` introduce la contraseña y se activará dicha opción, [aquí las instrucciones](https://imageqa.jpereira.net/descargas/Instalacion_OsX_ES.pdf).
 
