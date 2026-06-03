@@ -1,112 +1,175 @@
 from colormath.color_conversions import convert_color
 from colormath.color_objects import LabColor, sRGBColor
 
-from warning_class import AppWarningsClass
-
 import math
+import re
+import shlex
+
+
+class CGATSError(ValueError):
+    pass
 
 
 class GetCGATSClass:
 
+    REQUIRED_FIELDS = ("SAMPLE_ID", "LAB_L", "LAB_A", "LAB_B")
+
     def __init__(self, cgatsFile):
         self.cgatsFile = cgatsFile
-        with open(self.cgatsFile, "r") as cgats_handle:
+        with open(self.cgatsFile, "r", encoding="utf-8-sig", errors="replace") as cgats_handle:
             self.lines = cgats_handle.readlines()
 
-        idxData = self.get_lab_from_cgats()
-        self.read_cgats_file(idxData)
+        self.fields = self.get_lab_from_cgats()
+        self.read_cgats_file()
         #self.get_patch_name()
         #self.lab_to_rgb()
 
+    def _split_cgats_line(self, line):
+
+        lexer = shlex.shlex(line, posix=True)
+        lexer.whitespace_split = True
+        lexer.commenters = "#"
+        return list(lexer)
+
+    def _get_section_indexes(self, begin_tag, end_tag):
+
+        start = None
+        end = None
+
+        for idx, item in enumerate(self.lines):
+            tokens = self._split_cgats_line(item)
+            if not tokens:
+                continue
+
+            marker = tokens[0].upper()
+            if marker == begin_tag:
+                start = idx
+            elif marker == end_tag and start is not None:
+                end = idx
+                break
+
+        if start is None or end is None or end <= start:
+            raise CGATSError("CGATS file does not contain a valid " + begin_tag + "/" + end_tag + " section")
+
+        return start, end
+
     def get_lab_from_cgats(self):
 
-        start = 0
-        end = 0
-        for idx, item in enumerate(self.lines):
-            v = item.strip()
-
-            if v == "BEGIN_DATA_FORMAT":
-                start = idx
-            if v == "END_DATA_FORMAT":
-                end = idx
-
         fields = []
+        start, end = self._get_section_indexes("BEGIN_DATA_FORMAT", "END_DATA_FORMAT")
+
         for idx, item in enumerate(self.lines):
+            if start < idx < end:
+                fields.extend(self._split_cgats_line(item))
 
-            if idx > start and idx < end:
-                fields.append(item.split())
+        if not fields:
+            raise CGATSError("CGATS DATA_FORMAT section is empty")
 
-        if "SAMPLE_ID" not in fields[0]:
-            return AppWarningsClass.critical_warn("CGATS file does not contain any SAMPLE_ID tag")
-        if "LAB_L" not in fields[0]:
-            return AppWarningsClass.critical_warn("CGATS file does not contain any LAB_L tag")
-        if "LAB_A" not in fields[0]:
-            return AppWarningsClass.critical_warn("CGATS file does not contain any LAB_A tag")
-        if "LAB_B" not in fields[0]:
-            return AppWarningsClass.critical_warn("CGATS file does not contain any LAB_B tag")
+        missing = [field for field in self.REQUIRED_FIELDS if field not in fields]
+        if missing:
+            raise CGATSError("CGATS file does not contain required tag(s): " + ", ".join(missing))
 
-        if "D_VIS" in fields[0]:
+        return fields
 
-            idxData = [i for i, e in enumerate(fields[0]) if
-                       e == "SAMPLE_ID" or e == "LAB_L" or e == "LAB_A" or e == "LAB_B" or e == "D_VIS"]
-        else:
+    def _get_field_value(self, values, field_index, field_name):
 
-            idxData = [i for i, e in enumerate(fields[0]) if
-                       e == "SAMPLE_ID" or e == "LAB_L" or e == "LAB_A" or e == "LAB_B" ]
+        index = field_index.get(field_name)
+        if index is None:
+            return None
 
-        return idxData
+        if index >= len(values):
+            raise CGATSError("CGATS data row does not contain a value for " + field_name)
 
+        return values[index]
 
-    def read_cgats_file(self, idxData):
+    def read_cgats_file(self, fields=None):
 
-        start = 0
-        end = 0
-        for idx, item in enumerate(self.lines):
-            v = item.strip()
+        if fields is None:
+            fields = self.fields
 
-            if v == "BEGIN_DATA":
-                start = idx
-            if v == "END_DATA":
-                end = idx
+        start, end = self._get_section_indexes("BEGIN_DATA", "END_DATA")
+        field_index = {field: index for index, field in enumerate(fields)}
 
         self.labCGATS = []
 
         for idx, item in enumerate(self.lines):
 
-            if item.strip() != "" and not item.strip().startswith("#"):
-                if idx > start and idx < end:
-                    item = item.split()
-                    values = []
-                    for i in idxData:
-                        values.append(item[i])
+            if start < idx < end:
+                values = self._split_cgats_line(item)
+                if not values:
+                    continue
 
+                if len(values) < len(fields):
+                    raise CGATSError("CGATS data row " + str(idx + 1) + " has fewer values than DATA_FORMAT")
 
-                    rgbr =  self.lab_to_rgb_2(values[1], values[2], values[3])[0]
-                    rgbg = self.lab_to_rgb_2(values[1], values[2], values[3])[1]
-                    rgbb = self.lab_to_rgb_2(values[1], values[2], values[3])[2]
-                    LUMA = self.rgb_to_luma(rgbr, rgbg, rgbb)
+                sample_id = self._get_field_value(values, field_index, "SAMPLE_ID")
+                sample_name = self._get_field_value(values, field_index, "SAMPLE_NAME")
 
-                    if len(values) > 4:
-                        dvis = values[4]
-                    else:
-                        dvis = self.RGB_to_density(LUMA )
+                lab_l = round(self.string_to_float(self._get_field_value(values, field_index, "LAB_L")), 2)
+                lab_a = round(self.string_to_float(self._get_field_value(values, field_index, "LAB_A")), 2)
+                lab_b = round(self.string_to_float(self._get_field_value(values, field_index, "LAB_B")), 2)
 
-                    refDic = {
-                        "SAMPLE_ID":values[0],
-                        "LAB_L":round(self.string_to_float(values[1]),2),
-                        "LAB_A":round(self.string_to_float(values[2]),2),
-                        "LAB_B":round(self.string_to_float(values[3]),2),
-                        "RGB_R": rgbr,
-                        "RGB_G": rgbg,
-                        "RGB_B": rgbb,
-                        "D_VIS": round(self.string_to_float(dvis),2),
-                        "LUMA": LUMA
-                    }
-                    self.labCGATS.append(refDic)
-                    #self.labCGATS.append([values[0],self.string_to_float(values[1]),self.string_to_float(values[2]),self.string_to_float(values[3])])
+                rgbr, rgbg, rgbb = self.lab_to_rgb_2(lab_l, lab_a, lab_b)
+                luma = self.rgb_to_luma(rgbr, rgbg, rgbb)
+
+                dvis = self._get_field_value(values, field_index, "D_VIS")
+                if dvis is None:
+                    dvis = self.RGB_to_density(luma)
+
+                refDic = {
+                    "SAMPLE_ID": sample_id,
+                    "SAMPLE_NAME": sample_name,
+                    "PATCH_NAME": sample_name or sample_id,
+                    "LAB_L": lab_l,
+                    "LAB_A": lab_a,
+                    "LAB_B": lab_b,
+                    "RGB_R": rgbr,
+                    "RGB_G": rgbg,
+                    "RGB_B": rgbb,
+                    "D_VIS": round(self.string_to_float(dvis), 2),
+                    "LUMA": luma,
+                    "IS_GRAY": self.is_gray_patch(sample_id, sample_name, lab_a, lab_b)
+                }
+                self.labCGATS.append(refDic)
+                #self.labCGATS.append([values[0],self.string_to_float(values[1]),self.string_to_float(values[2]),self.string_to_float(values[3])])
+
+        self.mark_classic_colorchecker_gray_patches()
 
         #print(self.labCGATS)
         return self.labCGATS
+
+    def is_gray_patch(self, sample_id, sample_name, lab_a, lab_b):
+
+        return math.hypot(lab_a, lab_b) <= 5
+
+    def normalize_patch_name(self, patch_name):
+
+        patch_name = (patch_name or "").strip().upper()
+        match = re.fullmatch(r"([A-Z]+)0*(\d+)", patch_name)
+        if not match:
+            return patch_name
+
+        return match.group(1) + str(int(match.group(2)))
+
+    def mark_classic_colorchecker_gray_patches(self):
+
+        if len(self.labCGATS) != 24:
+            return
+
+        names = {self.normalize_patch_name(patch["PATCH_NAME"]) for patch in self.labCGATS}
+        classic_names = {
+            row + str(column)
+            for row in ("A", "B", "C", "D")
+            for column in range(1, 7)
+        }
+
+        if names != classic_names:
+            return
+
+        for patch in self.labCGATS:
+            patch_name = self.normalize_patch_name(patch["PATCH_NAME"])
+            if re.fullmatch(r"D[1-6]", patch_name):
+                patch["IS_GRAY"] = True
 
     def rgb_to_luma(self, rgbr, rgbg, rgbb):
 
@@ -115,6 +178,7 @@ class GetCGATSClass:
 
     def RGB_to_density(self, luma):
 
+        luma = max(float(luma), 1.0)
         density = round( math.log10(math.pow((255 / luma), 2.2)), 2)
         return density
 
@@ -123,6 +187,9 @@ class GetCGATSClass:
         '''
         Convierte a RGB para colorear las barras de los graficos para una comprension viusal
         '''
+        CIEL = self.string_to_float(CIEL)
+        CIEa = self.string_to_float(CIEa)
+        CIEb = self.string_to_float(CIEb)
         lab = LabColor(CIEL,CIEa,CIEb)
         rgb = convert_color(lab, sRGBColor)
         a = vars(rgb)
@@ -133,10 +200,11 @@ class GetCGATSClass:
 
     def string_to_float(self, string):
 
+        string = str(string).strip().strip('"').replace(',', '.')
         try:
             return float(string)
         except:
-            return float(string.replace(',', '.'))
+            return float(string)
     '''
     def get_patch_name(self):
 
@@ -165,7 +233,4 @@ class GetCGATSClass:
 
     def check_rgb_range(self, value):
 
-        if value > 255:
-            return 255
-        else:
-            return value
+        return max(0, min(255, int(value)))

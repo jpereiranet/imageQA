@@ -39,7 +39,7 @@ class GetDeltasClass:
     def get_patch_name(self, reference):
         patchName = []
         for patch in reference:
-            patchName.append(patch["SAMPLE_ID"])
+            patchName.append(patch.get("PATCH_NAME") or patch.get("SAMPLE_NAME") or patch["SAMPLE_ID"])
         return patchName
 
     def get_patch_rgbcolor(self, reference):
@@ -279,12 +279,16 @@ class GetDeltasClass:
         o = []
         for x in range(len(self.targRef)):
 
+            if self.targRef[x].get("IS_GRAY"):
+                o.append(x)
+                continue
+
             lab = LabColor(lab_l=self.targRef[x]['LAB_L'], lab_a=self.targRef[x]['LAB_A'], lab_b=self.targRef[x]['LAB_B'], observer=self.observer.strip('"'),
                            illuminant='D50')
             lch = convert_color(lab, LCHabColor)
             c = lch.lch_c
-            # si es menor de 2 es que es un gris
-            if c < 2:
+            # Los archivos medidos pueden traer grises reales con una leve dominante.
+            if c <= 5:
                 o.append(x)
 
         return o
@@ -315,13 +319,18 @@ class GetDeltasClass:
 
     def do_stats(self, arr, unit):
 
+        if not arr:
+            raise ValueError('stats require at least one data point')
+
         max_value = round(max(arr), 2)
         min_value = round(min(arr), 2)
         avg_value = round(self.do_mean(arr), 2)
         desv_value = round(self.stddev(arr), 2)
 
-        meanColorPatch = round(self.do_mean(self.get_chromatic_patches(arr)), 2)
-        meanGrayPatch = round(self.do_mean(self.get_achromatic_patches(arr)), 2)
+        chromatic_patches = self.get_chromatic_patches(arr)
+        achromatic_patches = self.get_achromatic_patches(arr)
+        meanColorPatch = round(self.do_mean(chromatic_patches), 2) if chromatic_patches else "N/A"
+        meanGrayPatch = round(self.do_mean(achromatic_patches), 2) if achromatic_patches else "N/A"
 
         o = {"units": unit,
              "Average": str(avg_value),
